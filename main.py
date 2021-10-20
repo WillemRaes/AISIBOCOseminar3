@@ -48,23 +48,29 @@ data_tx2 = {
     'latency': [],
 
 }
-# pip install pyorbital
 
-from pyorbital.orbital import Orbital
+data_server = {
+    'time': [],
+    'latency': [],
 
-# satellite = Orbital('TERRA')
+}
+data_nano = {
+    'time': [],
+    'latency': [],
+
+}
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div(
     html.Div([
-        html.H4('TERRA Satellite Live Feed'),
+        html.H4('Latency evaluation edge vs cloud'),
         html.Div(id='live-update-text'),
         dcc.Graph(id='live-update-graph'),
         dcc.Interval(
             id='interval-component',
-            interval=1 * 1000,  # in milliseconds
+            interval=1 * 200,  # in milliseconds
             n_intervals=0
         )
     ])
@@ -92,13 +98,41 @@ app.layout = html.Div(
               Input('interval-component', 'n_intervals'))
 def update_graph_live(n):
     global data_tx2
-    while not config.log_queue_tx2.empty():
-        data_tx2 = config.log_queue_tx2.get()
-        data_tx2['time'].append(data_tx2[0])
-        data_tx2['latency'].append(data_tx2[-1] * 1000)
+    global data_server
+    global data_data_nano
+    while not config.log_queue_server.empty():
+        data = config.log_queue_server.get()
+        if data[0] == 'jetsontx2/latency':
 
+            data_tx2['time'].append(datetime.datetime.fromtimestamp(data[1]))
+            if len(data_tx2['time']) > 150:
+                del data_tx2['time'][0]
+
+            data_tx2['latency'].append(data[-1] * 1000)
+            if len(data_tx2['latency']) > 150:
+                del data_tx2['latency'][0]
+
+        if data[0] == 'jetsonnano/latency':
+
+            data_nano['time'].append(datetime.datetime.fromtimestamp(data[1]))
+            if len(data_nano['time']) > 150:
+                del data_nano['time'][0]
+
+            data_nano['latency'].append(data[-1] * 1000)
+            if len(data_nano['latency']) > 150:
+                del data_nano['latency'][0]
+
+        if data[0] == 'server/latency':
+
+            data_server['time'].append(datetime.datetime.fromtimestamp(data[1]))
+            if len(data_server['time']) > 150:
+                del data_server['time'][0]
+
+            data_server['latency'].append(data[-1] * 1000)
+            if len(data_server['latency']) > 150:
+                del data_server['latency'][0]
     # Create the graph with subplots
-    fig = plotly.tools.make_subplots(rows=2, cols=1, vertical_spacing=0.2)
+    fig = plotly.tools.make_subplots(rows=3, cols=1, vertical_spacing=0.2)
     fig['layout']['margin'] = {
         'l': 30, 'r': 10, 'b': 30, 't': 10
     }
@@ -112,18 +146,30 @@ def update_graph_live(n):
         'type': 'scatter'
     }, 1, 1)
     fig.append_trace({
-        'x': data_tx2['time'],
-        'y': data_tx2['latency'],
+        'x': data_nano['time'],
+        'y': data_nano['latency'],
         'name': 'latency',
         'mode': 'lines+markers',
         'type': 'scatter'
-    }, 1, 1)
-
+    }, 2, 1)
+    fig.append_trace({
+        'x': data_server['time'],
+        'y': data_server['latency'],
+        'name': 'latency',
+        'mode': 'lines+markers',
+        'type': 'scatter'
+    }, 3, 1)
     return fig
 
 
 if __name__ == '__main__':
-    mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-tx2", broker_addr="10.128.64.5", queue_out=log_queue_tx2, topic="jetsontx2/latency")
+    mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-server", broker_addr="10.128.64.5", queue_out=config.log_queue_server, topic="server/latency")
+    mqtt_thread.start()
+    mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-nano", broker_addr="10.128.64.5",
+                                     queue_out=config.log_queue_server, topic="jetsonnano/latency")
+    mqtt_thread.start()
+    mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-tx2", broker_addr="10.128.64.5",
+                                     queue_out=config.log_queue_server, topic="jetsontx2/latency")
     mqtt_thread.start()
     app.run_server(debug=True)
 

@@ -36,7 +36,7 @@ class MQTTStreamConsumer(threading.Thread):
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, message):
-        server_time_ms = int(time.time() * 1000)
+        server_time_ms = time.time()
         result = float(message.payload)
         # print(result)
         try:

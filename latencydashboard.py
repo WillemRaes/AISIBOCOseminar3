@@ -4,60 +4,84 @@ import pandas
 import dash
 
 import datetime
-
+import random
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly
 from dash.dependencies import Input, Output
 from Config import config
+import time
+from flask import Flask, Response
+import cv2
 
-def serve_layout():
-    return html.H1('The time is: ' + str(datetime.datetime.now()))
 
+class VideoCamera(object):
+    def __init__(self):
+        self.video = cv2.VideoCapture(0)
+
+    def __del__(self):
+        self.video.release()
+
+    def get_frame(self):
+        success, image = self.video.read()
+        ret, jpeg = cv2.imencode('.jpg', image)
+        return jpeg.tobytes()
+
+
+def gen(camera):
+    while True:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+
+# server = Flask(__name__)
+# app = dash.Dash(__name__, server=server)
+
+
+# @server.route('/video_feed')
+# def video_feed():
+#     return Response(gen(VideoCamera()),
+#                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+# app.layout = html.Div([
+#     html.H1("Webcam Test"),
+#     html.Img(src="/video_feed")
+# ])
 
 data_tx2 = {
     'time': [],
     'latency': [],
 
 }
-# pip install pyorbital
+data_server = {
+    'time': [],
+    'latency': [],
 
-from pyorbital.orbital import Orbital
+}
+data_nano = {
+    'time': [],
+    'latency': [],
 
-# satellite = Orbital('TERRA')
+}
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
+#external_stylesheets = ['./dash-wind-streaming.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div(
     html.Div([
-        html.H4('TERRA Satellite Live Feed'),
+        html.H4('Latency evaluation Edge VS Cloud'),
         html.Div(id='live-update-text'),
         dcc.Graph(id='live-update-graph'),
         dcc.Interval(
             id='interval-component',
-            interval=1 * 1000,  # in milliseconds
+            interval=1 * 500,  # in milliseconds
             n_intervals=0
         )
     ])
 )
-
-
-#@app.callback(Output('live-update-text', 'children'),
-#              Input('interval-component', 'n_intervals'))
-#def update_metrics(n):
-
-#    if not config.log_queue_tx2.empty():
-#        data_tx2 = config.log_queue_tx2.get()
-
-    # lon, lat, alt = satellite.get_lonlatalt(datetime.datetime.now())
-#    style = {'padding': '5px', 'fontSize': '16px'}
-#    return [
-#        html.Span('Latency: {0:.2f}'.format(data_tx2[-1]), style=style),
-        # html.Span('Latitude: {0:.2f}'.format(lat), style=style),
-        # html.Span('Altitude: {0:0.2f}'.format(alt), style=style)
-#    ]
 
 
 # Multiple components can update everytime interval gets fired.
@@ -65,13 +89,19 @@ app.layout = html.Div(
               Input('interval-component', 'n_intervals'))
 def update_graph_live(n):
     global data_tx2
+
+    for val in range(random.randint(1, 12)):
+        config.log_queue_tx2.put(["jetsontx2/latency", time.time(), random.uniform(0, 0.1)])
+        time.sleep(0.05)
     while not config.log_queue_tx2.empty():
-        data_tx2 = config.log_queue_tx2.get()
-        data_tx2['time'].append(data_tx2[0] )
-        data_tx2['latency'].append(data_tx2[-1]* 1000)
+        data = config.log_queue_tx2.get()
+        data_tx2['time'].append(datetime.datetime.fromtimestamp(data[1]))
+        if len(data_tx2['time']) > 150:
+            del data_tx2['time'][0]
 
-
-
+        data_tx2['latency'].append(data[-1] * 1000)
+        if len(data_tx2['latency']) > 150:
+            del data_tx2['latency'][0]
 
     # Create the graph with subplots
     fig = plotly.tools.make_subplots(rows=2, cols=1, vertical_spacing=0.2)
@@ -93,7 +123,7 @@ def update_graph_live(n):
         'name': 'latency',
         'mode': 'lines+markers',
         'type': 'scatter'
-    }, 1, 1)
+    }, 2, 1)
 
     return fig
 

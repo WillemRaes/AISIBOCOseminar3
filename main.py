@@ -102,7 +102,7 @@ def update_graph_live(n):
     global data_data_nano
     while not config.log_queue_server.empty():
         data = config.log_queue_server.get()
-        if data[0] == 'jetsontx2/latency':
+        if data[0] == 'jetsontx2/RTlatency':
 
             data_tx2['time'].append(datetime.datetime.fromtimestamp(data[1]))
             if len(data_tx2['time']) > 150:
@@ -138,6 +138,8 @@ def update_graph_live(n):
     }
     fig['layout']['legend'] = {'x': 0, 'y': 1, 'xanchor': 'left'}
     fig.layout.height = 1000
+    # fig.layout.xaxis_title = "Local time of day",
+    # fig.layout.yaxis_title = "Latency in (ms)",
     fig.append_trace({
         'x': data_tx2['time'],
         'y': data_tx2['latency'],
@@ -151,8 +153,16 @@ def update_graph_live(n):
         'y': data_nano['latency'],
         'name': 'latency Jetson Nano',
         'mode': 'lines+markers',
-        'type': 'scatter'
+        'type': 'scatter',
+
     }, 2, 1)
+    # fig.append_trace({
+    #     'x': data_server['time'],
+    #     'y': data_server['latency'],
+    #     'name': 'latency Server',
+    #     'mode': 'lines+markers',
+    #     'type': 'scatter'
+    # }, 3, 1)
     fig.append_trace({
         'x': data_server['time'],
         'y': data_server['latency'],
@@ -161,26 +171,35 @@ def update_graph_live(n):
         'type': 'scatter'
     }, 3, 1)
     fig.append_trace({
-        'x': data_server['time'],
-        'y': data_server['latency'],
-        'name': 'latency Server',
-        'mode': 'lines+markers',
-        'type': 'scatter'
-    }, 4, 1)
-    fig.append_trace({
         'x': data_tx2['time'],
         'y': data_tx2['latency'],
         'name': 'latency Jetson-TX2',
         'mode': 'lines+markers',
-        'type': 'scatter'
-    }, 4, 1)
+        'type': 'scatter',
+
+
+    }, row=3, col=1)
     fig.append_trace({
         'x': data_nano['time'],
         'y': data_nano['latency'],
         'name': 'latency Jetson Nano',
         'mode': 'lines+markers',
-        'type': 'scatter'
-    }, 4, 1)
+        'type': 'scatter',
+
+
+    }, row=3, col=1)
+    # Update xaxis properties
+    fig.update_xaxes(title_text="Local time of day", row=1, col=1)
+    fig.update_xaxes(title_text="Local time of day", row=2, col=1)
+    fig.update_xaxes(title_text="Local time of day", row=3, col=1)
+    # fig.update_xaxes(title_text="Local time of day", row=4, col=1)
+
+    # Update yaxis properties
+    fig.update_yaxes(title_text="Latency in (ms)", row=1, col=1)
+    fig.update_yaxes(title_text="Latency in (ms)",  row=2, col=1)
+    fig.update_yaxes(title_text="Latency in (ms)",  row=3, col=1)
+    # fig.update_yaxes(title_text="Latency in (ms)", row=4, col=1)
+
     return fig
 
 
@@ -191,11 +210,9 @@ if __name__ == '__main__':
                                      queue_out=config.log_queue_server, topic="jetsonnano/latency")
     mqtt_thread.start()
     mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-tx2", broker_addr="10.128.64.5",
-                                     queue_out=config.log_queue_server, topic="jetsontx2/latency")
+                                     queue_out=config.log_queue_server, topic="jetsontx2/RTlatency")
     mqtt_thread.start()
-    app.run_server(debug=False)
-
-
+    app.run_server(debug=True)
 
     while True:
         pass

@@ -132,33 +132,55 @@ def update_graph_live(n):
             if len(data_server['latency']) > 150:
                 del data_server['latency'][0]
     # Create the graph with subplots
-    fig = plotly.tools.make_subplots(rows=3, cols=1, vertical_spacing=0.2)
+    fig = plotly.tools.make_subplots(rows=4, cols=1, vertical_spacing=0.05)
     fig['layout']['margin'] = {
-        'l': 30, 'r': 10, 'b': 30, 't': 10
+        'l': 10, 'r': 10, 'b': 30, 't': 10
     }
     fig['layout']['legend'] = {'x': 0, 'y': 1, 'xanchor': 'left'}
-
+    fig.layout.height = 1000
     fig.append_trace({
         'x': data_tx2['time'],
         'y': data_tx2['latency'],
-        'name': 'latency',
+        'name': 'latency Jetson TX2',
         'mode': 'lines+markers',
-        'type': 'scatter'
+        'type': 'scatter',
+
     }, 1, 1)
     fig.append_trace({
         'x': data_nano['time'],
         'y': data_nano['latency'],
-        'name': 'latency',
+        'name': 'latency Jetson Nano',
         'mode': 'lines+markers',
         'type': 'scatter'
     }, 2, 1)
     fig.append_trace({
         'x': data_server['time'],
         'y': data_server['latency'],
-        'name': 'latency',
+        'name': 'latency Server',
         'mode': 'lines+markers',
         'type': 'scatter'
     }, 3, 1)
+    fig.append_trace({
+        'x': data_server['time'],
+        'y': data_server['latency'],
+        'name': 'latency Server',
+        'mode': 'lines+markers',
+        'type': 'scatter'
+    }, 4, 1)
+    fig.append_trace({
+        'x': data_tx2['time'],
+        'y': data_tx2['latency'],
+        'name': 'latency Jetson-TX2',
+        'mode': 'lines+markers',
+        'type': 'scatter'
+    }, 4, 1)
+    fig.append_trace({
+        'x': data_nano['time'],
+        'y': data_nano['latency'],
+        'name': 'latency Jetson Nano',
+        'mode': 'lines+markers',
+        'type': 'scatter'
+    }, 4, 1)
     return fig
 
 
@@ -171,7 +193,7 @@ if __name__ == '__main__':
     mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-tx2", broker_addr="10.128.64.5",
                                      queue_out=config.log_queue_server, topic="jetsontx2/latency")
     mqtt_thread.start()
-    app.run_server(debug=True)
+    app.run_server(debug=False)
 
 
 

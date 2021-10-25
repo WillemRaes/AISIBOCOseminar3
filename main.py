@@ -70,7 +70,7 @@ app.layout = html.Div(
         dcc.Graph(id='live-update-graph'),
         dcc.Interval(
             id='interval-component',
-            interval=1 * 200,  # in milliseconds
+            interval=1 * 100,  # in milliseconds
             n_intervals=0
         )
     ])
@@ -143,7 +143,7 @@ def update_graph_live(n):
     fig.append_trace({
         'x': data_tx2['time'],
         'y': data_tx2['latency'],
-        'name': 'latency Jetson TX2',
+        'name': 'latency Jetson TX2 (Cloud)',
         'mode': 'lines+markers',
         'type': 'scatter',
 
@@ -151,7 +151,7 @@ def update_graph_live(n):
     fig.append_trace({
         'x': data_nano['time'],
         'y': data_nano['latency'],
-        'name': 'latency Jetson Nano',
+        'name': 'latency Jetson Nano (Edge)',
         'mode': 'lines+markers',
         'type': 'scatter',
 
@@ -173,7 +173,7 @@ def update_graph_live(n):
     fig.append_trace({
         'x': data_tx2['time'],
         'y': data_tx2['latency'],
-        'name': 'latency Jetson-TX2',
+        'name': 'latency Jetson-TX2 (Cloud)',
         'mode': 'lines+markers',
         'type': 'scatter',
 
@@ -182,7 +182,7 @@ def update_graph_live(n):
     fig.append_trace({
         'x': data_nano['time'],
         'y': data_nano['latency'],
-        'name': 'latency Jetson Nano',
+        'name': 'latency Jetson Nano (Edge)',
         'mode': 'lines+markers',
         'type': 'scatter',
 

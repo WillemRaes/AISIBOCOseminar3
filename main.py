@@ -37,7 +37,7 @@ import dash_html_components as html
 import plotly
 from dash.dependencies import Input, Output
 from Config import config
-
+import csv
 
 def serve_layout():
     return html.H1('The time is: ' + str(datetime.datetime.now()))
@@ -59,6 +59,14 @@ data_nano = {
     'latency': [],
 
 }
+
+logfile = open('data/latencylognano.csv', 'w')
+
+# create the csv writer
+writer = csv.writer(logfile)
+
+# write a row to the csv file
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -100,37 +108,39 @@ def update_graph_live(n):
     global data_tx2
     global data_server
     global data_data_nano
+    global writer
     while not config.log_queue_server.empty():
         data = config.log_queue_server.get()
+        writer.writerow(data)
         if data[0] == 'jetsontx2/RTlatency':
 
             data_tx2['time'].append(datetime.datetime.fromtimestamp(data[1]))
-            if len(data_tx2['time']) > 150:
-                del data_tx2['time'][0]
+            # if len(data_tx2['time']) > 150:
+            #     del data_tx2['time'][0]
 
             data_tx2['latency'].append(data[-1] * 1000)
-            if len(data_tx2['latency']) > 150:
-                del data_tx2['latency'][0]
+            # if len(data_tx2['latency']) > 150:
+            #     del data_tx2['latency'][0]
 
         if data[0] == 'jetsonnano/latency':
 
             data_nano['time'].append(datetime.datetime.fromtimestamp(data[1]))
-            if len(data_nano['time']) > 150:
-                del data_nano['time'][0]
+            # if len(data_nano['time']) > 150:
+            #     del data_nano['time'][0]
 
             data_nano['latency'].append(data[-1] * 1000)
-            if len(data_nano['latency']) > 150:
-                del data_nano['latency'][0]
+            # if len(data_nano['latency']) > 150:
+            #     del data_nano['latency'][0]
 
         if data[0] == 'server/latency':
 
             data_server['time'].append(datetime.datetime.fromtimestamp(data[1]))
-            if len(data_server['time']) > 150:
-                del data_server['time'][0]
+            # if len(data_server['time']) > 150:
+            #     del data_server['time'][0]
 
             data_server['latency'].append(data[-1] * 1000)
-            if len(data_server['latency']) > 150:
-                del data_server['latency'][0]
+            # if len(data_server['latency']) > 150:
+            #     del data_server['latency'][0]
     # Create the graph with subplots
     fig = plotly.tools.make_subplots(rows=4, cols=1, vertical_spacing=0.05)
     fig['layout']['margin'] = {
@@ -211,6 +221,9 @@ if __name__ == '__main__':
     mqtt_thread.start()
     mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-tx2", broker_addr="10.128.64.5",
                                      queue_out=config.log_queue_server, topic="jetsontx2/RTlatency")
+    mqtt_thread.start()
+    mqtt_thread = MQTTStreamConsumer(name="Client-mqtt-tx2-2", broker_addr="10.128.64.5",
+                                     queue_out=config.log_queue_server, topic="jetsontx2/latency")
     mqtt_thread.start()
     app.run_server(debug=True)
 

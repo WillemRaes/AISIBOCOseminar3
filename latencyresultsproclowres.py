@@ -3,7 +3,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-tx2log = pd.read_csv('./data/latencylogtx2-lowres.csv', names=['topic', 'server_time', 'latency'])
+tx2log = pd.read_csv('./data/latencylogtx2-lowres-new.csv', names=['topic', 'server_time', 'latency'])
 nanolog = pd.read_csv('./data/latencylognano-lowres.csv',  names=['topic', 'server_time', 'latency'])
 
 tx2log['latency'] = tx2log['latency'] * 1000
@@ -47,7 +47,7 @@ ax = sns.boxplot(x='topic', y="mean",  data=df_total,  palette="Set2", fliersize
 plt.xlabel("Hardware")
 plt.ylabel("Latency deviation from median (ms)")
 plt.grid()
-plt.ylim(-30, 30)
+plt.ylim(-30, 32)
 ax.set(xticklabels=["Jetson Nano", "Jetson TX2"])
 plt.savefig('boxplot_total_latency_lowres.pdf')
 plt.show()

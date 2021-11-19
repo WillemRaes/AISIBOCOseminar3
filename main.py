@@ -60,7 +60,7 @@ data_nano = {
 
 }
 
-logfile = open('data/latencylogtx2-new.csv', 'w')
+logfile = open('data/latencylogtx2-lowres-new.csv', 'w')
 
 # create the csv writer
 writer = csv.writer(logfile)
